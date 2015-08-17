@@ -20,6 +20,7 @@ public class Main extends HvlTemplateInteg2D {
 
 	final boolean debugDraw = true;
 	final float enemySpeed = 64.0f, playerSpeed = 128.0f;
+	final float playerSize = 16.0f, enemySize = 16.0f;
 
 	float enemyX, enemyY;
 	float playerX, playerY;
@@ -43,8 +44,8 @@ public class Main extends HvlTemplateInteg2D {
 		map = HvlLayeredTileMap.load("SavedMap", true, getTexture(0), 0, 0, 32, 32);
 		enemyX = 6 * map.getTileWidth();
 		enemyY = 5 * map.getTileHeight();
-		playerX = 11 * map.getTileWidth();
-		playerY = 11 * map.getTileHeight();
+		playerX = 11 * map.getTileWidth() + map.getTileWidth() / 2;
+		playerY = 11 * map.getTileHeight() + map.getTileWidth() / 2;
 
 		regenPath();
 	}
@@ -53,8 +54,8 @@ public class Main extends HvlTemplateInteg2D {
 	public void update(float delta) {
 		HvlCoord playerM = new HvlCoord(HvlInputSeriesAction.HORIZONTAL.getCurrentOutput(), HvlInputSeriesAction.VERTICAL.getCurrentOutput());
 		playerM.normalize().fixNaN().mult(delta).mult(playerSpeed);
-		handleCollision(playerX, playerY, playerM);
-				
+		handleCollision(playerX, playerY, playerM, playerSize);
+
 		playerX += playerM.x;
 		playerY += playerM.y;
 
@@ -67,8 +68,8 @@ public class Main extends HvlTemplateInteg2D {
 
 		previousPlayerTileX = currentPlayerTileX;
 		previousPlayerTileY = currentPlayerTileY;
-		currentPlayerTileX = getTileX(playerX);
-		currentPlayerTileY = getTileY(playerY);
+		currentPlayerTileX = map.toTileX(playerX);
+		currentPlayerTileY = map.toTileY(playerY);
 
 		if (currentPlayerTileX != previousPlayerTileX || currentPlayerTileY != previousPlayerTileY) {
 			regenPath();
@@ -76,14 +77,15 @@ public class Main extends HvlTemplateInteg2D {
 		}
 
 		if (found != null && found.size() > 0 && currentNode < found.size()) {
-			HvlCoord enemyM = new HvlCoord(map.toWorldX(found.get(currentNode).getX()) - enemyX, map.toWorldY(found.get(currentNode).getY()) - enemyY);
+			HvlCoord enemyM = new HvlCoord(map.toWorldX(found.get(currentNode).getX()) + (map.getTileWidth() / 2) - enemyX, map.toWorldY(found.get(currentNode)
+					.getY()) + (map.getTileHeight() / 2) - enemyY);
 			enemyM.normalize().fixNaN().mult(delta).mult(enemySpeed);
-			handleCollision(enemyX, enemyY, enemyM);
+			handleCollision(enemyX, enemyY, enemyM, enemySize);
 			enemyX += enemyM.x;
 			enemyY += enemyM.y;
 
-			if (new HvlCoord(map.toWorldX(found.get(currentNode).getX()) - enemyX, map.toWorldY(found.get(currentNode).getY()) - enemyY).length() < delta
-					* enemySpeed) {
+			if (new HvlCoord(map.toWorldX(found.get(currentNode).getX()) + (map.getTileWidth() / 2) - enemyX, map.toWorldY(found.get(currentNode).getY())
+					+ (map.getTileHeight() / 2) - enemyY).length() < delta * enemySpeed) {
 				currentNode++;
 			}
 		}
@@ -98,24 +100,8 @@ public class Main extends HvlTemplateInteg2D {
 			}
 		}
 
-		HvlPainter2D.hvlDrawQuad(enemyX, enemyY, map.getTileWidth(), map.getTileHeight(), Color.red);
-		HvlPainter2D.hvlDrawQuad(playerX, playerY, map.getTileWidth(), map.getTileHeight(), Color.green);
-	}
-
-	private int getTileX(float x) {
-		if (((x - map.getX()) / map.getTileWidth()) - (int) ((x - map.getX()) / map.getTileWidth()) < 0.5f)
-			return (int) ((x - map.getX()) / map.getTileWidth());
-		else
-			return (int) ((x - map.getX()) / map.getTileWidth()) + 1;
-
-	}
-
-	private int getTileY(float y) {
-
-		if (((y - map.getX()) / map.getTileHeight()) - (int) ((y - map.getX()) / map.getTileHeight()) < 0.5f)
-			return (int) ((y - map.getX()) / map.getTileHeight());
-		else
-			return (int) ((y - map.getX()) / map.getTileHeight()) + 1;
+		HvlPainter2D.hvlDrawQuad(enemyX - enemySize / 2, enemyY - enemySize / 2, enemySize, enemySize, Color.red);
+		HvlPainter2D.hvlDrawQuad(playerX - playerSize / 2, playerY - playerSize / 2, playerSize, playerSize, Color.green);
 	}
 
 	private void drawPathLine(int sX, int sY, int tX, int tY) {
@@ -124,36 +110,35 @@ public class Main extends HvlTemplateInteg2D {
 	}
 
 	private void regenPath() {
-		found = new Pathfinder(map, 64, false).findPath(getTileX(enemyX), getTileY(enemyY), getTileX(playerX), getTileY(playerY));
+		found = new Pathfinder(map, 64, true).findPath(map.toTileX(enemyX), map.toTileY(enemyY), map.toTileX(playerX), map.toTileY(playerY));
 		if (found == null)
 			return;
 		found.remove(0);
 	}
 
-	private void handleCollision(float x, float y, HvlCoord motion)
-	{
-		if (map.isTileInLocation(x + motion.x + map.getTileWidth(), y, 1))
+	private void handleCollision(float x, float y, HvlCoord motion, float size) {
+		if (map.isTileInLocation(x + motion.x + size / 2, y - size / 2, 1))
 			motion.x = Math.min(0, motion.x);
-		
-		if (map.isTileInLocation(x + motion.x + map.getTileWidth(), y + map.getTileHeight(), 1))
+
+		if (map.isTileInLocation(x + motion.x + size / 2, y + size / 2, 1))
 			motion.x = Math.min(0, motion.x);
-		
-		if (map.isTileInLocation(x + motion.x, y, 1))
+
+		if (map.isTileInLocation(x + motion.x - size / 2, y - size / 2, 1))
 			motion.x = Math.max(0, motion.x);
-		
-		if (map.isTileInLocation(x + motion.x, y + map.getTileHeight(), 1))
+
+		if (map.isTileInLocation(x + motion.x - size / 2, y + size / 2, 1))
 			motion.x = Math.max(0, motion.x);
-		
-		if (map.isTileInLocation(x, y + motion.y + map.getTileHeight(), 1))
+
+		if (map.isTileInLocation(x - size / 2, y + motion.y + size / 2, 1))
 			motion.y = Math.min(0, motion.y);
-		
-		if (map.isTileInLocation(x + map.getTileWidth(), y + motion.y + map.getTileHeight(), 1))
+
+		if (map.isTileInLocation(x + size / 2, y + motion.y + size / 2, 1))
 			motion.y = Math.min(0, motion.y);
-		
-		if (map.isTileInLocation(x, y + motion.y, 1))
+
+		if (map.isTileInLocation(x - size / 2, y + motion.y - size / 2, 1))
 			motion.y = Math.min(0, motion.y);
-		
-		if (map.isTileInLocation(x + map.getTileWidth(), y + motion.y, 1))
+
+		if (map.isTileInLocation(x + size / 2, y + motion.y - size / 2, 1))
 			motion.y = Math.max(0, motion.y);
 	}
 }
