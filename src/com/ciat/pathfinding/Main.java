@@ -1,7 +1,5 @@
 package com.ciat.pathfinding;
 
-import java.util.List;
-
 import org.newdawn.slick.Color;
 
 import com.osreboot.ridhvl.HvlCoord;
@@ -16,18 +14,14 @@ import com.osreboot.ridhvl.tile.HvlLayeredTileMap;
 public class Main extends HvlTemplateInteg2D {
 
 	HvlLayeredTileMap map;
-	List<Step> found;
 
 	final boolean debugDraw = true;
 	final float enemySpeed = 64.0f, playerSpeed = 128.0f;
 	final float playerSize = 16.0f, enemySize = 16.0f;
 
-	float enemyX, enemyY;
 	public static float playerX, playerY;
 
 	int previousPlayerTileX, previousPlayerTileY, currentPlayerTileX, currentPlayerTileY;
-
-	int currentNode = 0;
 
 	public static void main(String[] args) {
 		new Main();
@@ -42,12 +36,8 @@ public class Main extends HvlTemplateInteg2D {
 		getTextureLoader().loadResource("Tilesheet");
 
 		map = HvlLayeredTileMap.load("SavedMap", true, getTexture(0), 0, 0, 32, 32);
-		enemyX = 6 * map.getTileWidth();
-		enemyY = 5 * map.getTileHeight();
 		playerX = 11 * map.getTileWidth() + map.getTileWidth() / 2;
 		playerY = 11 * map.getTileHeight() + map.getTileWidth() / 2;
-
-		regenPath();
 	}
 
 	@Override
@@ -83,13 +73,6 @@ public class Main extends HvlTemplateInteg2D {
 	public static void drawPathLine(int sX, int sY, int tX, int tY, HvlLayeredTileMap map) {
 		HvlPainter2D.hvlDrawLine(sX * map.getTileWidth() + (map.getTileWidth() / 2), sY * map.getTileHeight() + (map.getTileHeight() / 2),
 				tX * map.getTileWidth() + (map.getTileWidth() / 2), tY * map.getTileHeight() + (map.getTileHeight() / 2), Color.blue, 4.0f);
-	}
-
-	private void regenPath() {
-		found = new Pathfinder(map, 64, true).findPath(map.toTileX(enemyX), map.toTileY(enemyY), map.toTileX(playerX), map.toTileY(playerY));
-		if (found == null)
-			return;
-		found.remove(0);
 	}
 
 	public static void handleCollision(float x, float y, HvlCoord motion, float size, HvlLayeredTileMap map) {
