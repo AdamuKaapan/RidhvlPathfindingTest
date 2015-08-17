@@ -23,7 +23,7 @@ public class Main extends HvlTemplateInteg2D {
 	final float playerSize = 16.0f, enemySize = 16.0f;
 
 	float enemyX, enemyY;
-	float playerX, playerY;
+	public static float playerX, playerY;
 
 	int previousPlayerTileX, previousPlayerTileY, currentPlayerTileX, currentPlayerTileY;
 
@@ -54,7 +54,7 @@ public class Main extends HvlTemplateInteg2D {
 	public void update(float delta) {
 		HvlCoord playerM = new HvlCoord(HvlInputSeriesAction.HORIZONTAL.getCurrentOutput(), HvlInputSeriesAction.VERTICAL.getCurrentOutput());
 		playerM.normalize().fixNaN().mult(delta).mult(playerSpeed);
-		handleCollision(playerX, playerY, playerM, playerSize);
+		handleCollision(playerX, playerY, playerM, playerSize, map);
 
 		playerX += playerM.x;
 		playerY += playerM.y;
@@ -72,39 +72,15 @@ public class Main extends HvlTemplateInteg2D {
 		currentPlayerTileY = map.toTileY(playerY);
 
 		if (currentPlayerTileX != previousPlayerTileX || currentPlayerTileY != previousPlayerTileY) {
-			regenPath();
-			currentNode = 0;
-		}
-
-		if (found != null && found.size() > 0 && currentNode < found.size()) {
-			HvlCoord enemyM = new HvlCoord(map.toWorldX(found.get(currentNode).getX()) + (map.getTileWidth() / 2) - enemyX, map.toWorldY(found.get(currentNode)
-					.getY()) + (map.getTileHeight() / 2) - enemyY);
-			enemyM.normalize().fixNaN().mult(delta).mult(enemySpeed);
-			handleCollision(enemyX, enemyY, enemyM, enemySize);
-			enemyX += enemyM.x;
-			enemyY += enemyM.y;
-
-			if (new HvlCoord(map.toWorldX(found.get(currentNode).getX()) + (map.getTileWidth() / 2) - enemyX, map.toWorldY(found.get(currentNode).getY())
-					+ (map.getTileHeight() / 2) - enemyY).length() < delta * enemySpeed) {
-				currentNode++;
-			}
+			Enemy.regenPaths(map);
 		}
 
 		map.draw(delta);
 
-		if (debugDraw) {
-			if (found != null && found.size() > 0) {
-				for (int i = currentNode; i < found.size() - 1; i++) {
-					drawPathLine(found.get(i).getX(), found.get(i).getY(), found.get(i + 1).getX(), found.get(i + 1).getY());
-				}
-			}
-		}
-
-		HvlPainter2D.hvlDrawQuad(enemyX - enemySize / 2, enemyY - enemySize / 2, enemySize, enemySize, Color.red);
 		HvlPainter2D.hvlDrawQuad(playerX - playerSize / 2, playerY - playerSize / 2, playerSize, playerSize, Color.green);
 	}
 
-	private void drawPathLine(int sX, int sY, int tX, int tY) {
+	public static void drawPathLine(int sX, int sY, int tX, int tY, HvlLayeredTileMap map) {
 		HvlPainter2D.hvlDrawLine(sX * map.getTileWidth() + (map.getTileWidth() / 2), sY * map.getTileHeight() + (map.getTileHeight() / 2),
 				tX * map.getTileWidth() + (map.getTileWidth() / 2), tY * map.getTileHeight() + (map.getTileHeight() / 2), Color.blue, 4.0f);
 	}
@@ -116,7 +92,7 @@ public class Main extends HvlTemplateInteg2D {
 		found.remove(0);
 	}
 
-	private void handleCollision(float x, float y, HvlCoord motion, float size) {
+	public static void handleCollision(float x, float y, HvlCoord motion, float size, HvlLayeredTileMap map) {
 		if (map.isTileInLocation(x + motion.x + size / 2, y - size / 2, 1))
 			motion.x = Math.min(0, motion.x);
 

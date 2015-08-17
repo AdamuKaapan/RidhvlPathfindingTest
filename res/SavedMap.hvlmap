@@ -1,4 +1,8 @@
 <entities>
+<com.ciat.pathfinding.Enemy 176.0, 144.0>
+</com.ciat.pathfinding.Enemy>
+<com.ciat.pathfinding.Enemy 400.0, 176.0>
+</com.ciat.pathfinding.Enemy>
 </entities>
 <TileMap 16, 16, 32, 32>
 <com.osreboot.ridhvl.tile.collection.HvlSimpleTile, 0, 0>
