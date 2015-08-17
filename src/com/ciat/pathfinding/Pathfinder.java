@@ -112,6 +112,16 @@ public class Pathfinder {
 					int xp = x + current.x;
 					int yp = y + current.y;
 
+					// Don't let us cut corners TOO close (can't clip through corner of block)
+					if (allowDiagMovement) {
+						if (x != 0 && y != 0) {
+							if (!isValidLocation(current.x, current.y + 1) || !isValidLocation(current.x, current.y - 1)
+									|| !isValidLocation(current.x - 1, current.y) || !isValidLocation(current.x + 1, current.y)) {
+								continue;
+							}
+						}
+					}
+
 					// If we can actually go to this tile...
 					if (isValidLocation(xp, yp)) {
 						// Get the cost to move to the next tile (this could
