@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.newdawn.slick.Color;
 
+import com.ciat.pathfinding.HvlPathfinder.HvlPathfinderRestriction;
+import com.ciat.pathfinding.HvlPathfinder.HvlPathfinderStep;
 import com.osreboot.ridhvl.HvlCoord;
 import com.osreboot.ridhvl.painter.painter2d.HvlPainter2D;
 import com.osreboot.ridhvl.tile.HvlLayeredTileMap;
@@ -25,7 +27,7 @@ public class Enemy extends HvlEntity {
 	}
 
 	private int currentNode = 0;
-	private List<Step> path;
+	private List<HvlPathfinderStep> path;
 
 	static {
 		enemies = new LinkedList<>();
@@ -70,7 +72,7 @@ public class Enemy extends HvlEntity {
 	}
 
 	public void regenPath(HvlLayeredTileMap map) {
-		path = new Pathfinder(map, 64, true).findPath(map.toTileX(getX()), map.toTileY(getY()), map.toTileX(Main.playerX), map.toTileY(Main.playerY));
+		path = new HvlPathfinder(map, 1, HvlPathfinderRestriction.DIAGONAL_NO_CUTTING, 64).findPath(map.toTileX(getX()), map.toTileY(getY()), map.toTileX(Main.playerX), map.toTileY(Main.playerY));
 		if (path == null)
 			return;
 		path.remove(0);

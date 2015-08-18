@@ -41,6 +41,7 @@ public class Main extends HvlTemplateInteg2D {
 
 	@Override
 	public void update(float delta) {
+		
 		HvlCoord playerM = new HvlCoord(HvlInputSeriesAction.HORIZONTAL.getCurrentOutput(), HvlInputSeriesAction.VERTICAL.getCurrentOutput());
 		playerM.normalize().fixNaN().mult(delta).mult(playerSpeed);
 		handleCollision(playerX, playerY, playerM, playerSize, map);

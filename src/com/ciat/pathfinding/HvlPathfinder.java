@@ -7,7 +7,7 @@ import java.util.PriorityQueue;
 import com.osreboot.ridhvl.HvlMath;
 import com.osreboot.ridhvl.tile.HvlLayeredTileMap;
 
-public class Pathfinder {
+public class HvlPathfinder {
 
 	private class Node implements Comparable<Node> {
 		private int x;
@@ -41,33 +41,72 @@ public class Pathfinder {
 		}
 	}
 
+	public class HvlPathfinderStep {
+		private int x;
+		private int y;
+
+		public HvlPathfinderStep(int x, int y) {
+			this.x = x;
+			this.y = y;
+		}
+
+		public int getX() {
+			return x;
+		}
+
+		public int getY() {
+			return y;
+		}
+	}
+
+	/**
+	 * Dictates the restrictions on how a pathfinder can find a path.
+	 */
+	public static enum HvlPathfinderRestriction {
+		/**
+		 * Only moves horizontally and vertically
+		 */
+		NO_DIAGONAL,
+		/**
+		 * Moves diagonally (has the chance to cut across the corner of tiles)
+		 */
+		DIAGONAL,
+		/**
+		 * Moves diagonally and prevents cuting across the corner of tiles.
+		 */
+		DIAGONAL_NO_CUTTING
+	}
+
 	private ArrayList<Node> closed = new ArrayList<>();
 	private PriorityQueue<Node> open = new PriorityQueue<>();
 
 	private HvlLayeredTileMap map;
 
+	private HvlPathfinderRestriction restriction;
+
 	private int maxSearchDistance;
 
 	private Node[][] nodes;
 
-	private boolean allowDiagMovement;
+	private int searchLayer;
 
-	public Pathfinder(HvlLayeredTileMap map, int maxSearchDistance, boolean allowDiagMovement) {
-		this.map = map;
-		this.maxSearchDistance = maxSearchDistance;
-		this.allowDiagMovement = allowDiagMovement;
+	public HvlPathfinder(HvlLayeredTileMap mapArg, int searchLayerArg, HvlPathfinderRestriction restrictionArg, int maxSearchDistanceArg) {
+		this.map = mapArg;
+		this.searchLayer = searchLayerArg;
+		this.restriction = restrictionArg;
+		this.maxSearchDistance = maxSearchDistanceArg;
 
-		nodes = new Node[map.getLayer(1).getMapWidth()][map.getLayer(1).getMapHeight()];
-		for (int x = 0; x < map.getLayer(1).getMapWidth(); x++) {
-			for (int y = 0; y < map.getLayer(1).getMapHeight(); y++) {
+		nodes = new Node[mapArg.getLayer(searchLayerArg).getMapWidth()][mapArg.getLayer(searchLayerArg).getMapHeight()];
+		for (int x = 0; x < mapArg.getLayer(searchLayerArg).getMapWidth(); x++) {
+			for (int y = 0; y < mapArg.getLayer(searchLayerArg).getMapHeight(); y++) {
 				nodes[x][y] = new Node(x, y);
 			}
 		}
 	}
 
-	public List<Step> findPath(int startX, int startY, int targetX, int targetY) {
+	public List<HvlPathfinderStep> findPath(int startX, int startY, int targetX, int targetY) {
 		// Easy check to stop right away if the target is in a wall
-		if (map.isTileInLocation(targetX, targetY, 1))
+		if (map.isTileInLocation(targetX, targetY, searchLayer))
 			return null;
 
 		// Initial setup: all costs/depths = 0, open and closed are empty.
@@ -106,14 +145,16 @@ public class Pathfinder {
 						continue;
 
 					// Check for invalid diagonal movement
-					if (!allowDiagMovement && x != 0 && y != 0)
+					// (if it's not diagonal or diagonal no-cutting)
+					if (restriction == HvlPathfinderRestriction.NO_DIAGONAL && x != 0 && y != 0)
 						continue;
 
 					int xp = x + current.x;
 					int yp = y + current.y;
 
-					// Don't let us cut corners TOO close (can't clip through corner of block)
-					if (allowDiagMovement) {
+					// Don't let us cut corners TOO close (can't clip through
+					// corner of block)
+					if (restriction == HvlPathfinderRestriction.DIAGONAL_NO_CUTTING) {
 						if (x != 0 && y != 0) {
 							if (!isValidLocation(current.x, current.y + 1) || !isValidLocation(current.x, current.y - 1)
 									|| !isValidLocation(current.x - 1, current.y) || !isValidLocation(current.x + 1, current.y)) {
@@ -154,25 +195,25 @@ public class Pathfinder {
 		if (nodes[targetX][targetY].parent == null)
 			return null;
 
-		List<Step> tr = new ArrayList<>();
+		List<HvlPathfinderStep> tr = new ArrayList<>();
 
 		// Backtrack from the end to the beginning by following the parents
 		Node target = nodes[targetX][targetY];
 		while (target != nodes[startX][startY]) {
-			tr.add(0, new Step(target.x, target.y));
+			tr.add(0, new HvlPathfinderStep(target.x, target.y));
 			target = target.parent;
 		}
 		// Add the start tile to the path.
-		tr.add(0, new Step(target.x, target.y));
+		tr.add(0, new HvlPathfinderStep(target.x, target.y));
 
 		return tr;
 	}
 
 	private boolean isValidLocation(int x, int y) {
-		// Out of bounds = invalid, duh
-		if (x < 0 || y < 0 || x >= map.getLayer(1).getMapWidth() || y >= map.getLayer(1).getMapHeight())
+		// Out of bounds is invalid, duh
+		if (x < 0 || y < 0 || x >= map.getLayer(searchLayer).getMapWidth() || y >= map.getLayer(searchLayer).getMapHeight())
 			return false;
 
-		return map.getLayer(1).getTile(x, y) == null; // No tile = valid
+		return !map.isTileInLocation(x, y, searchLayer);
 	}
 }
