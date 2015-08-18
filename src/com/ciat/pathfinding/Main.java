@@ -16,8 +16,7 @@ public class Main extends HvlTemplateInteg2D {
 	HvlLayeredTileMap map;
 
 	final boolean debugDraw = true;
-	final float enemySpeed = 64.0f, playerSpeed = 128.0f;
-	final float playerSize = 16.0f, enemySize = 16.0f;
+	final float playerSpeed = 128.0f, playerSize = 16.0f;
 
 	public static float playerX, playerY;
 
@@ -35,7 +34,7 @@ public class Main extends HvlTemplateInteg2D {
 	public void initialize() {
 		getTextureLoader().loadResource("Tilesheet");
 
-		map = HvlLayeredTileMap.load("SavedMap", true, getTexture(0), 0, 0, 32, 32);
+		map = HvlLayeredTileMap.load("SavedMap", true, 0, 0, 32, 32, getTexture(0));
 		playerX = 11 * map.getTileWidth() + map.getTileWidth() / 2;
 		playerY = 11 * map.getTileHeight() + map.getTileWidth() / 2;
 	}
